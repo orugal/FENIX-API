@@ -294,6 +294,32 @@ const toolDeclarations = [
             },
             required: ["desde", "hasta"]
         }
+    },
+     {
+        name: "completar_recordatorios_por_nombre_o_fecha",
+        description:
+            "Completa un recordatorio del usuario por su nombre o por un rango de fechas. " +
+            "Utiliza esta herramienta cuando necesites completar un recordatorio creado por el usuario. para ponerlo en true que seria completado " +
+            "Si no se especifican fechas ni nombre de recordario se asume que son todos " +
+            contextoFecha,
+        parametersJsonSchema: {
+            type: "object",
+            properties: {
+                nombreRecordatorio: {
+                    type: "string",
+                    description:"Nombre del recordatorio a completar."
+                },
+                desde: {
+                    type: "string",
+                    description:"Fecha inicial de los recordatorios a buscar en formato YYYY-MM-DD. Ej. '2003-06-09'."
+                },
+                hasta: {
+                    type: "string",
+                    description:"Fecha final de los recordatorios a buscar en formato YYYY-MM-DD. Ej. '2003-06-09'."
+                }
+            },
+            required: ["nombreRecordatorio"]
+        }
     }
     // Agrega aquí tus tools propias siguiendo el mismo formato.
 ];
@@ -338,7 +364,14 @@ Tu solicitud ha sido registrada y descartada.`
             }
             catch (err) {
                 console.error("Error ejecutando el agente con Gemini:", err);
-                respuesta = "❌ Ocurrió un error intentando entender tu solicitud.";
+
+                const esModeloSaturado =
+                    err?.status === 503 ||
+                    /UNAVAILABLE|high demand/i.test(err?.message || "");
+
+                respuesta = esModeloSaturado
+                    ? "⏳ El modelo de IA está saturado por alta demanda en este momento. Por favor intenta de nuevo en unos minutos."
+                    : "❌ Ocurrió un error intentando entender tu solicitud.";
             }
         }
         /*
@@ -843,6 +876,7 @@ async function executeTool(name, args, chatId) {
                 .from('recordatorios')
                 .select("texto, fecha")
                 .eq('telegram_chat_id', chatId)
+                .eq('completado', false)
                 .gte('fecha', desde)
                 .lte('fecha', hasta);
 
@@ -852,6 +886,43 @@ async function executeTool(name, args, chatId) {
             }
 
             return { ok: true, recordatorios: response.data };
+        }
+
+        case "completar_recordatorios_por_nombre_o_fecha": {
+            const { nombreRecordatorio, desde, hasta } = args;
+
+            let query = supabase
+                .from('recordatorios')
+                .update({ completado: true })
+                .eq('telegram_chat_id', chatId)
+                .eq('completado', false);
+
+            if (nombreRecordatorio) {
+                query = query.ilike('texto', `%${nombreRecordatorio}%`);
+            }
+            if (desde) {
+                query = query.gte('fecha', desde);
+            }
+            if (hasta) {
+                query = query.lte('fecha', hasta);
+            }
+
+            const response = await query.select("texto, fecha");
+
+            if (response.error) {
+                console.error("Error al completar recordatorios:", response.error);
+                return { ok: false, mensaje: "Error al completar los recordatorios " + response.error };
+            }
+
+            if (!response.data || response.data.length === 0) {
+                return { ok: false, mensaje: "No se encontró ningún recordatorio que coincida con los criterios indicados." };
+            }
+
+            return {
+                ok: true,
+                mensaje: `Se completaron ${response.data.length} recordatorio(s).`,
+                recordatorios: response.data,
+            };
         }
 
         // Agrega aquí el case de cada tool nueva que declares arriba.
