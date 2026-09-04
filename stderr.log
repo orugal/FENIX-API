@@ -1,0 +1,223 @@
+Error ejecutando el agente con Gemini: ApiError: {"error":{"code":400,"message":"schema at top-level requires unspecified property 'termino'","status":"INVALID_ARGUMENT"}}
+    at throwErrorIfNotOK (/home4/adyxdbdm/nodevenv/fenix.wannabe.com.co/22/lib/node_modules/@google/genai/dist/node/index.cjs:14157:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async /home4/adyxdbdm/nodevenv/fenix.wannabe.com.co/22/lib/node_modules/@google/genai/dist/node/index.cjs:13857:13
+    at async Models.generateContent (/home4/adyxdbdm/nodevenv/fenix.wannabe.com.co/22/lib/node_modules/@google/genai/dist/node/index.cjs:15288:24)
+    at async ejecutarAgente (/home4/adyxdbdm/fenix.wannabe.com.co/controllers/webhookTelegramIAController.js:470:26)
+    at async exports.receive (/home4/adyxdbdm/fenix.wannabe.com.co/controllers/webhookTelegramIAController.js:228:35) {
+  status: 400
+}
+args.idCliente 81
+args.idCuentaCobro undefined
+args.idCliente 81
+args.idCuentaCobro undefined
+====================================
+FENIX - TURNO: 1
+Tokens entrada : 1307
+Tokens salida  : 25
+Tokens total   : 1332
+====================================
+args.idCliente undefined
+args.idCuentaCobro 138
+====================================
+FENIX - TURNO: 2
+Tokens entrada : 1576
+Tokens salida  : 181
+Tokens total   : 1757
+====================================
+
+
+-------------------------------------------------------------OTRA-----------
+====================================
+FENIX - TURNO: 1
+Tokens entrada : 1307
+Tokens salida  : 24
+Tokens total   : 1331
+====================================
+====================================
+FENIX - TURNO: 2
+Tokens entrada : 1578
+Tokens salida  : 21
+Tokens total   : 1599
+====================================
+args.idCliente 81
+args.idCuentaCobro undefined
+====================================
+FENIX - TURNO: 3
+Tokens entrada : 16095
+Tokens salida  : 210
+Tokens total   : 16305
+====================================
+====================================
+FENIX - TURNO: 1
+Tokens entrada : 1519
+Tokens salida  : 24
+Tokens total   : 1543
+====================================
+====================================
+FENIX - TURNO: 2
+Tokens entrada : 1805
+Tokens salida  : 26
+Tokens total   : 1831
+====================================
+args.idCliente 50
+args.idCuentaCobro undefined
+====================================
+FENIX - TURNO: 3
+Tokens entrada : 2331
+Tokens salida  : 143
+Tokens total   : 2474
+====================================
+====================================
+FENIX - TURNO: 1
+Tokens entrada : 1517
+Tokens salida  : 25
+Tokens total   : 1542
+====================================
+args.idCliente undefined
+args.idCuentaCobro 243
+====================================
+FENIX - TURNO: 2
+Tokens entrada : 1815
+Tokens salida  : 168
+Tokens total   : 1983
+====================================
+====================================
+FENIX - TURNO: 1
+Tokens entrada : 1516
+Tokens salida  : 23
+Tokens total   : 1539
+====================================
+====================================
+FENIX - TURNO: 1
+Tokens entrada : 1611
+Tokens salida  : 19
+Tokens total   : 1630
+====================================
+====================================
+FENIX - TURNO: 2
+Tokens entrada : 1658
+Tokens salida  : 26
+Tokens total   : 1684
+====================================
+args.idCliente 86
+args.idCuentaCobro undefined
+====================================
+FENIX - TURNO: 3
+Tokens entrada : 2155
+Tokens salida  : 198
+Tokens total   : 2353
+====================================
+====================================
+FENIX - TURNO: 1
+Tokens entrada : 1609
+Tokens salida  : 25
+Tokens total   : 1634
+====================================
+args.idCliente undefined
+args.idCuentaCobro 411
+====================================
+FENIX - TURNO: 2
+Tokens entrada : 1876
+Tokens salida  : 120
+Tokens total   : 1996
+====================================
+====================================
+FENIX - TURNO: 1
+Tokens entrada : 1613
+Tokens salida  : 25
+Tokens total   : 1638
+====================================
+args.idCliente undefined
+args.idCuentaCobro 418
+====================================
+FENIX - TURNO: 2
+Tokens entrada : 1880
+Tokens salida  : 136
+Tokens total   : 2016
+====================================
+====================================
+FENIX - TURNO: 1
+Tokens entrada : 1611
+Tokens salida  : 21
+Tokens total   : 1632
+====================================
+====================================
+FENIX - TURNO: 2
+Tokens entrada : 1660
+Tokens salida  : 26
+Tokens total   : 1686
+====================================
+args.idCliente 86
+args.idCuentaCobro undefined
+====================================
+FENIX - TURNO: 3
+Tokens entrada : 1930
+Tokens salida  : 107
+Tokens total   : 2037
+====================================
+/home4/adyxdbdm/fenix.wannabe.com.co/index.js:20
+app.use("/google", googleCallback);
+                   ^
+
+ReferenceError: googleCallback is not defined
+    at Object.<anonymous> (/home4/adyxdbdm/fenix.wannabe.com.co/index.js:20:20)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Module._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Module.require (node:internal/modules/cjs/loader:1527:12)
+    at require (node:internal/modules/helpers:147:16)
+    at startApplication (/usr/local/lsws/fcgi-bin/lsnode.js:51:15)
+    at Object.<anonymous> (/usr/local/lsws/fcgi-bin/lsnode.js:16:1)
+
+Node.js v22.23.2
+/home4/adyxdbdm/fenix.wannabe.com.co/index.js:26
+    console.log(`🔥 FENIX ha renacido de las cenizas y alza el vuelo en el puerto ${PORT} 🔥`);l
+                                                                                               ^
+
+ReferenceError: l is not defined
+    at Server.<anonymous> (/home4/adyxdbdm/fenix.wannabe.com.co/index.js:26:96)
+    at Server.f (/home4/adyxdbdm/nodevenv/fenix.wannabe.com.co/22/lib/node_modules/once/once.js:25:25)
+    at Object.onceWrapper (node:events:633:28)
+    at Server.emit (node:events:531:35)
+    at Server.<anonymous> (/usr/local/lsws/fcgi-bin/lsnode.js:104:16)
+    at Object.onceWrapper (node:events:633:28)
+    at Server.emit (node:events:531:35)
+    at emitListeningNT (node:net:1984:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:88:21)
+
+Node.js v22.23.2
+/home4/adyxdbdm/fenix.wannabe.com.co/index.js:26
+    console.log(`🔥 FENIX ha renacido de las cenizas y alza el vuelo en el puerto ${PORT} 🔥`);l
+                                                                                               ^
+
+ReferenceError: l is not defined
+    at Server.<anonymous> (/home4/adyxdbdm/fenix.wannabe.com.co/index.js:26:96)
+    at Server.f (/home4/adyxdbdm/nodevenv/fenix.wannabe.com.co/22/lib/node_modules/once/once.js:25:25)
+    at Object.onceWrapper (node:events:633:28)
+    at Server.emit (node:events:531:35)
+    at Server.<anonymous> (/usr/local/lsws/fcgi-bin/lsnode.js:104:16)
+    at Object.onceWrapper (node:events:633:28)
+    at Server.emit (node:events:531:35)
+    at emitListeningNT (node:net:1984:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:88:21)
+
+Node.js v22.23.2
+/home4/adyxdbdm/fenix.wannabe.com.co/index.js:26
+    console.log(`🔥 FENIX ha renacido de las cenizas y alza el vuelo en el puerto ${PORT} 🔥`);l
+                                                                                               ^
+
+ReferenceError: l is not defined
+    at Server.<anonymous> (/home4/adyxdbdm/fenix.wannabe.com.co/index.js:26:96)
+    at Server.f (/home4/adyxdbdm/nodevenv/fenix.wannabe.com.co/22/lib/node_modules/once/once.js:25:25)
+    at Object.onceWrapper (node:events:633:28)
+    at Server.emit (node:events:531:35)
+    at Server.<anonymous> (/usr/local/lsws/fcgi-bin/lsnode.js:104:16)
+    at Object.onceWrapper (node:events:633:28)
+    at Server.emit (node:events:531:35)
+    at emitListeningNT (node:net:1984:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:88:21)
+
+Node.js v22.23.2

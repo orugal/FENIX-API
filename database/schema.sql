@@ -1,0 +1,26 @@
+CREATE TABLE devices (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    ip VARCHAR(45),
+    online TINYINT(1) DEFAULT 0,
+    last_seen DATETIME,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE commands (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    device VARCHAR(50) NOT NULL,
+    command VARCHAR(50) NOT NULL,
+    value TEXT,
+    executed TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    device VARCHAR(50),
+    level VARCHAR(20),
+    message TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
