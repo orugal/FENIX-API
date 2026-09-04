@@ -320,8 +320,44 @@ const toolDeclarations = [
             },
             required: ["nombreRecordatorio"]
         }
+    },
+    {
+        name: "agregar_a_lista_de_compras",
+        description: "Agrega uno o varios productos a la lista de compras del usuario.",
+        parametersJsonSchema: {
+            type: "object",
+            properties: {
+                productos: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Lista de productos a agregar. Ej: ['pan', 'leche', 'huevos']"
+                }
+            },
+            required: ["productos"]
+        }
+    },
+    {
+        name: "ver_lista_compras",
+        description: "Obtiene la lista de compras del usuario.",
+        parametersJsonSchema: {
+            type: "object",
+            properties: {}
+        }
+    },
+    {
+        name: "borrar_lista_compras",
+        description: "Borra toda la lista de compras del usuario o productos específicos.",
+        parametersJsonSchema: {
+            type: "object",
+            properties: {
+                productos: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Opcional. Productos específicos a eliminar. Si se omite, elimina toda la lista."
+                }
+            }
+        }
     }
-    // Agrega aquí tus tools propias siguiendo el mismo formato.
 ];
 
 exports.receive = async (req, res) => {
@@ -922,6 +958,84 @@ async function executeTool(name, args, chatId) {
                 ok: true,
                 mensaje: `Se completaron ${response.data.length} recordatorio(s).`,
                 recordatorios: response.data,
+            };
+        }
+
+        case "agregar_a_lista_de_compras": {
+            const { productos } = args;
+            if (!productos || !Array.isArray(productos) || productos.length === 0) {
+                return { ok: false, mensaje: "Debes proporcionar al menos un producto." };
+            }
+
+            const filas = productos.map((p) => ({
+                telegram_chat_id: chatId,
+                producto: String(p).trim(),
+                comprado: false,
+            }));
+
+            const response = await supabase
+                .from("lista_compras")
+                .insert(filas)
+                .select("producto");
+
+            if (response.error) {
+                console.error("Error al agregar a la lista de compras:", response.error);
+                return { ok: false, mensaje: "Error al agregar a la lista de compras: " + response.error.message };
+            }
+
+            return {
+                ok: true,
+                mensaje: `Se agregaron ${response.data.length} producto(s) a la lista de compras.`,
+                productos: response.data.map((item) => item.producto),
+            };
+        }
+
+        case "ver_lista_compras": {
+            const response = await supabase
+                .from("lista_compras")
+                .select("id, producto, comprado, created_at")
+                .eq("telegram_chat_id", chatId)
+                .order("created_at", { ascending: true });
+
+            if (response.error) {
+                console.error("Error al consultar lista de compras:", response.error);
+                return { ok: false, mensaje: "Error al consultar la lista de compras: " + response.error.message };
+            }
+
+            return {
+                ok: true,
+                total: response.data.length,
+                productos: response.data,
+            };
+        }
+
+        case "borrar_lista_compras": {
+            const { productos } = args;
+            let query = supabase
+                .from("lista_compras")
+                .delete()
+                .eq("telegram_chat_id", chatId);
+
+            if (productos && Array.isArray(productos) && productos.length > 0) {
+                const prodsLimpios = productos.map((p) => String(p).trim());
+                query = query.in("producto", prodsLimpios);
+            }
+
+            const response = await query.select("producto");
+
+            if (response.error) {
+                console.error("Error al borrar lista de compras:", response.error);
+                return { ok: false, mensaje: "Error al borrar de la lista de compras: " + response.error.message };
+            }
+
+            if (!response.data || response.data.length === 0) {
+                return { ok: false, mensaje: "No se encontró ningún producto para eliminar." };
+            }
+
+            return {
+                ok: true,
+                mensaje: `Se eliminaron ${response.data.length} producto(s) de la lista de compras.`,
+                eliminados: response.data.map((item) => item.producto),
             };
         }
 
