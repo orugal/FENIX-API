@@ -357,6 +357,66 @@ const toolDeclarations = [
                 }
             }
         }
+    },
+    {
+        name: "agregar_gasto",
+        description: "Registra un nuevo gasto personal (fecha, concepto del gasto, valor). " + contextoFecha,
+        parametersJsonSchema: {
+            type: "object",
+            properties: {
+                gasto: {
+                    type: "string",
+                    description: "Concepto o descripción del gasto. Ej: 'gasolina', 'restaurante'."
+                },
+                valor: {
+                    type: "number",
+                    description: "Monto o valor monetario del gasto."
+                },
+                fecha: {
+                    type: "string",
+                    description: "Fecha del gasto en formato YYYY-MM-DD. Si no se indica, usa la fecha actual."
+                }
+            },
+            required: ["gasto", "valor"]
+        }
+    },
+    {
+        name: "consultar_gastos",
+        description: "Consulta los gastos del usuario filtrados por concepto y/o rango de fechas (desde/hasta). " + contextoFecha,
+        parametersJsonSchema: {
+            type: "object",
+            properties: {
+                gasto: {
+                    type: "string",
+                    description: "Opcional. Nombre o concepto del gasto a filtrar. Ej: 'gasolina'."
+                },
+                desde: {
+                    type: "string",
+                    description: "Opcional. Fecha inicial en formato YYYY-MM-DD. Ej: '2025-08-01'."
+                },
+                hasta: {
+                    type: "string",
+                    description: "Opcional. Fecha final en formato YYYY-MM-DD. Ej: '2025-08-31'."
+                }
+            }
+        }
+    },
+    {
+        name: "borrar_gasto",
+        description: "Elimina gastos del usuario por ID o por concepto/nombre del gasto.",
+        parametersJsonSchema: {
+            type: "object",
+            properties: {
+                id: {
+                    type: "integer",
+                    description: "ID específico del registro de gasto a eliminar."
+                },
+                gasto: {
+                    type: "string",
+                    description: "Nombre o concepto del gasto a eliminar."
+                }
+            }
+        }
     }
 ];
 
@@ -1036,6 +1096,110 @@ async function executeTool(name, args, chatId) {
                 ok: true,
                 mensaje: `Se eliminaron ${response.data.length} producto(s) de la lista de compras.`,
                 eliminados: response.data.map((item) => item.producto),
+            };
+        }
+
+        case "agregar_gasto": {
+            const { gasto, valor, fecha } = args;
+            if (!gasto || valor === undefined || valor === null) {
+                return { ok: false, mensaje: "Debes proporcionar 'gasto' y 'valor'." };
+            }
+
+            const fechaGasto = fecha || fechaColombia;
+
+            const response = await supabase
+                .from("gastos")
+                .insert([
+                    {
+                        telegram_chat_id: chatId,
+                        gasto: String(gasto).trim(),
+                        valor: Number(valor),
+                        fecha: fechaGasto,
+                    }
+                ])
+                .select("id, gasto, valor, fecha");
+
+            if (response.error) {
+                console.error("Error al registrar gasto:", response.error);
+                return { ok: false, mensaje: "Error al registrar gasto: " + response.error.message };
+            }
+
+            return {
+                ok: true,
+                mensaje: "Gasto registrado exitosamente",
+                registro: response.data[0],
+            };
+        }
+
+        case "consultar_gastos": {
+            const { gasto, desde, hasta } = args;
+
+            let query = supabase
+                .from("gastos")
+                .select("id, gasto, valor, fecha, created_at")
+                .eq("telegram_chat_id", chatId)
+                .order("fecha", { ascending: true });
+
+            if (gasto) {
+                query = query.ilike("gasto", `%${gasto.trim()}%`);
+            }
+            if (desde) {
+                query = query.gte("fecha", desde);
+            }
+            if (hasta) {
+                query = query.lte("fecha", hasta);
+            }
+
+            const response = await query;
+
+            if (response.error) {
+                console.error("Error al consultar gastos:", response.error);
+                return { ok: false, mensaje: "Error al consultar gastos: " + response.error.message };
+            }
+
+            const totalMonto = (response.data || []).reduce((acc, curr) => acc + Number(curr.valor || 0), 0);
+
+            return {
+                ok: true,
+                totalRegistros: response.data ? response.data.length : 0,
+                totalMonto: totalMonto,
+                gastos: response.data || [],
+            };
+        }
+
+        case "borrar_gasto": {
+            const { id, gasto } = args;
+
+            if (!id && !gasto) {
+                return { ok: false, mensaje: "Debes especificar al menos el 'id' o el nombre del 'gasto' a eliminar." };
+            }
+
+            let query = supabase
+                .from("gastos")
+                .delete()
+                .eq("telegram_chat_id", chatId);
+
+            if (id) {
+                query = query.eq("id", id);
+            } else if (gasto) {
+                query = query.ilike("gasto", `%${gasto.trim()}%`);
+            }
+
+            const response = await query.select("id, gasto, valor, fecha");
+
+            if (response.error) {
+                console.error("Error al borrar gasto:", response.error);
+                return { ok: false, mensaje: "Error al borrar gasto: " + response.error.message };
+            }
+
+            if (!response.data || response.data.length === 0) {
+                return { ok: false, mensaje: "No se encontró ningún gasto que coincida con los criterios." };
+            }
+
+            return {
+                ok: true,
+                mensaje: `Se eliminaron ${response.data.length} registro(s) de gastos.`,
+                eliminados: response.data,
             };
         }
 
