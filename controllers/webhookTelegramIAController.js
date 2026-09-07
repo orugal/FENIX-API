@@ -320,8 +320,104 @@ const toolDeclarations = [
             },
             required: ["nombreRecordatorio"]
         }
+    },
+    {
+        name: "agregar_a_lista_de_compras",
+        description: "Agrega uno o varios productos a la lista de compras del usuario.",
+        parametersJsonSchema: {
+            type: "object",
+            properties: {
+                productos: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Lista de productos a agregar. Ej: ['pan', 'leche', 'huevos']"
+                }
+            },
+            required: ["productos"]
+        }
+    },
+    {
+        name: "ver_lista_compras",
+        description: "Obtiene la lista de compras del usuario.",
+        parametersJsonSchema: {
+            type: "object",
+            properties: {}
+        }
+    },
+    {
+        name: "borrar_lista_compras",
+        description: "Borra toda la lista de compras del usuario o productos específicos.",
+        parametersJsonSchema: {
+            type: "object",
+            properties: {
+                productos: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Opcional. Productos específicos a eliminar. Si se omite, elimina toda la lista."
+                }
+            }
+        }
+    },
+    {
+        name: "agregar_gasto",
+        description: "Registra un nuevo gasto personal (fecha, concepto del gasto, valor). " + contextoFecha,
+        parametersJsonSchema: {
+            type: "object",
+            properties: {
+                gasto: {
+                    type: "string",
+                    description: "Concepto o descripción del gasto. Ej: 'gasolina', 'restaurante'."
+                },
+                valor: {
+                    type: "number",
+                    description: "Monto o valor monetario del gasto."
+                },
+                fecha: {
+                    type: "string",
+                    description: "Fecha del gasto en formato YYYY-MM-DD. Si no se indica, usa la fecha actual."
+                }
+            },
+            required: ["gasto", "valor"]
+        }
+    },
+    {
+        name: "consultar_gastos",
+        description: "Consulta los gastos del usuario filtrados por concepto y/o rango de fechas (desde/hasta). " + contextoFecha,
+        parametersJsonSchema: {
+            type: "object",
+            properties: {
+                gasto: {
+                    type: "string",
+                    description: "Opcional. Nombre o concepto del gasto a filtrar. Ej: 'gasolina'."
+                },
+                desde: {
+                    type: "string",
+                    description: "Opcional. Fecha inicial en formato YYYY-MM-DD. Ej: '2025-08-01'."
+                },
+                hasta: {
+                    type: "string",
+                    description: "Opcional. Fecha final en formato YYYY-MM-DD. Ej: '2025-08-31'."
+                }
+            }
+        }
+    },
+    {
+        name: "borrar_gasto",
+        description: "Elimina gastos del usuario por ID o por concepto/nombre del gasto.",
+        parametersJsonSchema: {
+            type: "object",
+            properties: {
+                id: {
+                    type: "integer",
+                    description: "ID específico del registro de gasto a eliminar."
+                },
+                gasto: {
+                    type: "string",
+                    description: "Nombre o concepto del gasto a eliminar."
+                }
+            }
+        }
     }
-    // Agrega aquí tus tools propias siguiendo el mismo formato.
 ];
 
 exports.receive = async (req, res) => {
@@ -922,6 +1018,188 @@ async function executeTool(name, args, chatId) {
                 ok: true,
                 mensaje: `Se completaron ${response.data.length} recordatorio(s).`,
                 recordatorios: response.data,
+            };
+        }
+
+        case "agregar_a_lista_de_compras": {
+            const { productos } = args;
+            if (!productos || !Array.isArray(productos) || productos.length === 0) {
+                return { ok: false, mensaje: "Debes proporcionar al menos un producto." };
+            }
+
+            const filas = productos.map((p) => ({
+                telegram_chat_id: chatId,
+                producto: String(p).trim(),
+                comprado: false,
+            }));
+
+            const response = await supabase
+                .from("lista_compras")
+                .insert(filas)
+                .select("producto");
+
+            if (response.error) {
+                console.error("Error al agregar a la lista de compras:", response.error);
+                return { ok: false, mensaje: "Error al agregar a la lista de compras: " + response.error.message };
+            }
+
+            return {
+                ok: true,
+                mensaje: `Se agregaron ${response.data.length} producto(s) a la lista de compras.`,
+                productos: response.data.map((item) => item.producto),
+            };
+        }
+
+        case "ver_lista_compras": {
+            const response = await supabase
+                .from("lista_compras")
+                .select("id, producto, comprado, created_at")
+                .eq("telegram_chat_id", chatId)
+                .order("created_at", { ascending: true });
+
+            if (response.error) {
+                console.error("Error al consultar lista de compras:", response.error);
+                return { ok: false, mensaje: "Error al consultar la lista de compras: " + response.error.message };
+            }
+
+            return {
+                ok: true,
+                total: response.data.length,
+                productos: response.data,
+            };
+        }
+
+        case "borrar_lista_compras": {
+            const { productos } = args;
+            let query = supabase
+                .from("lista_compras")
+                .delete()
+                .eq("telegram_chat_id", chatId);
+
+            if (productos && Array.isArray(productos) && productos.length > 0) {
+                const prodsLimpios = productos.map((p) => String(p).trim());
+                query = query.in("producto", prodsLimpios);
+            }
+
+            const response = await query.select("producto");
+
+            if (response.error) {
+                console.error("Error al borrar lista de compras:", response.error);
+                return { ok: false, mensaje: "Error al borrar de la lista de compras: " + response.error.message };
+            }
+
+            if (!response.data || response.data.length === 0) {
+                return { ok: false, mensaje: "No se encontró ningún producto para eliminar." };
+            }
+
+            return {
+                ok: true,
+                mensaje: `Se eliminaron ${response.data.length} producto(s) de la lista de compras.`,
+                eliminados: response.data.map((item) => item.producto),
+            };
+        }
+
+        case "agregar_gasto": {
+            const { gasto, valor, fecha } = args;
+            if (!gasto || valor === undefined || valor === null) {
+                return { ok: false, mensaje: "Debes proporcionar 'gasto' y 'valor'." };
+            }
+
+            const fechaGasto = fecha || fechaColombia;
+
+            const response = await supabase
+                .from("gastos")
+                .insert([
+                    {
+                        telegram_chat_id: chatId,
+                        gasto: String(gasto).trim(),
+                        valor: Number(valor),
+                        fecha: fechaGasto,
+                    }
+                ])
+                .select("id, gasto, valor, fecha");
+
+            if (response.error) {
+                console.error("Error al registrar gasto:", response.error);
+                return { ok: false, mensaje: "Error al registrar gasto: " + response.error.message };
+            }
+
+            return {
+                ok: true,
+                mensaje: "Gasto registrado exitosamente",
+                registro: response.data[0],
+            };
+        }
+
+        case "consultar_gastos": {
+            const { gasto, desde, hasta } = args;
+
+            let query = supabase
+                .from("gastos")
+                .select("id, gasto, valor, fecha, created_at")
+                .eq("telegram_chat_id", chatId)
+                .order("fecha", { ascending: true });
+
+            if (gasto) {
+                query = query.ilike("gasto", `%${gasto.trim()}%`);
+            }
+            if (desde) {
+                query = query.gte("fecha", desde);
+            }
+            if (hasta) {
+                query = query.lte("fecha", hasta);
+            }
+
+            const response = await query;
+
+            if (response.error) {
+                console.error("Error al consultar gastos:", response.error);
+                return { ok: false, mensaje: "Error al consultar gastos: " + response.error.message };
+            }
+
+            const totalMonto = (response.data || []).reduce((acc, curr) => acc + Number(curr.valor || 0), 0);
+
+            return {
+                ok: true,
+                totalRegistros: response.data ? response.data.length : 0,
+                totalMonto: totalMonto,
+                gastos: response.data || [],
+            };
+        }
+
+        case "borrar_gasto": {
+            const { id, gasto } = args;
+
+            if (!id && !gasto) {
+                return { ok: false, mensaje: "Debes especificar al menos el 'id' o el nombre del 'gasto' a eliminar." };
+            }
+
+            let query = supabase
+                .from("gastos")
+                .delete()
+                .eq("telegram_chat_id", chatId);
+
+            if (id) {
+                query = query.eq("id", id);
+            } else if (gasto) {
+                query = query.ilike("gasto", `%${gasto.trim()}%`);
+            }
+
+            const response = await query.select("id, gasto, valor, fecha");
+
+            if (response.error) {
+                console.error("Error al borrar gasto:", response.error);
+                return { ok: false, mensaje: "Error al borrar gasto: " + response.error.message };
+            }
+
+            if (!response.data || response.data.length === 0) {
+                return { ok: false, mensaje: "No se encontró ningún gasto que coincida con los criterios." };
+            }
+
+            return {
+                ok: true,
+                mensaje: `Se eliminaron ${response.data.length} registro(s) de gastos.`,
+                eliminados: response.data,
             };
         }
 
