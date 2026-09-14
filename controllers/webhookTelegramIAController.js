@@ -454,9 +454,9 @@ Tu solicitud ha sido registrada y descartada.`
             try {
                 const resultado = await ejecutarAgente(texto, chatId);
                 respuesta = resultado.response;
-                respuesta += `\n\n📊 Tokens usados: ${resultado.tokensUsados}`;
-                respuesta += `\n📊 Tokens de entrada: ${resultado.tokensEntrada}`;
-                respuesta += `\n📊 Tokens de salida: ${resultado.tokensSalida}`;
+                respuesta += `\n\n TU: ${resultado.tokensUsados}`;
+                respuesta += ` - TE: ${resultado.tokensEntrada}`;
+                respuesta += ` - TS: ${resultado.tokensSalida}`;
             }
             catch (err) {
                 console.error("Error ejecutando el agente con Gemini:", err);
